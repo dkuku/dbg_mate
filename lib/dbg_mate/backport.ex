@@ -11,7 +11,10 @@ defmodule DbgMate.Backport do
   - conditions: case, cond, if, unless, with
 
   To use it just set the config value in config or run this before your dbg call
+
+  ```
   Application.put_env(:elixir, :dbg_callback, {DbgMate,Backport, :dbg, []})
+  ```
   """
   @typedoc "Abstract Syntax Tree (AST)"
   @type t :: input

@@ -15,6 +15,9 @@ defmodule DbgMate do
   and additionally shows the time it took to execute every line.
 
   To use it just set the config value in config or run this before your dbg call
+
+  ```
   Application.put_env(:elixir, :dbg_callback, {DbgMate,Backport, :dbg, []})
+  ```
   """
 end
