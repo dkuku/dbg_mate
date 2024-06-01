@@ -4,7 +4,7 @@ defmodule CustomIf do
   end
 end
 
-defmodule DbgMateTest do
+defmodule DbgMate.BackportTest do
   use ExUnit.Case, async: true
 
   describe "dbg/3" do
@@ -12,7 +12,7 @@ defmodule DbgMateTest do
       quote do
         {result, formatted} =
           ExUnit.CaptureIO.with_io(fn ->
-            unquote(DbgMate.dbg(ast, options, __CALLER__))
+            unquote(DbgMate.Backport.dbg(ast, options, __CALLER__))
           end)
 
         # Make sure there's an empty line after the output.
@@ -66,7 +66,7 @@ defmodule DbgMateTest do
       {result, formatted} = dbg_format([:a, :b, :c] |> tl() |> tl |> Kernel.hd())
       assert result == :c
 
-      assert formatted =~ "dbg_mate_test.exs"
+      assert formatted =~ "backport_test.exs"
 
       assert formatted =~ """
              \n[:a, :b, :c] #=> [:a, :b, :c]
@@ -91,7 +91,7 @@ defmodule DbgMateTest do
 
       assert result == :c
 
-      assert formatted =~ "dbg_mate_test.exs"
+      assert formatted =~ "backport_test.exs"
 
       assert formatted =~ """
              \n[:a, :b, :c] #=> [:a, :b, :c]
@@ -109,7 +109,7 @@ defmodule DbgMateTest do
       {result, formatted} = dbg_format(:rand.uniform() < 0.0 and length([]) == 0)
       assert result == false
 
-      assert formatted =~ "dbg_mate_test.exs"
+      assert formatted =~ "backport_test.exs"
 
       assert formatted =~ """
              :rand.uniform() < 0.0 #=> false
@@ -121,7 +121,7 @@ defmodule DbgMateTest do
       {result, formatted} = dbg_format(List.first([]) || "yes" || raise("foo"))
       assert result == "yes"
 
-      assert formatted =~ "dbg_mate_test.exs"
+      assert formatted =~ "backport_test.exs"
 
       assert formatted =~ """
              List.first([]) #=> nil
@@ -137,7 +137,7 @@ defmodule DbgMateTest do
 
       assert result == true
 
-      assert formatted =~ "dbg_mate_test.exs"
+      assert formatted =~ "backport_test.exs"
 
       assert formatted =~ """
              true1 #=> true
@@ -158,7 +158,7 @@ defmodule DbgMateTest do
 
       assert result == 4
 
-      assert formatted =~ "dbg_mate_test.exs"
+      assert formatted =~ "backport_test.exs"
 
       assert formatted =~ """
              Code block:
@@ -183,7 +183,7 @@ defmodule DbgMateTest do
 
       assert result == 6
 
-      assert formatted =~ "dbg_mate_test.exs"
+      assert formatted =~ "backport_test.exs"
 
       assert formatted =~ """
              Case argument:
@@ -212,7 +212,7 @@ defmodule DbgMateTest do
 
       assert result == {:ok, 20}
 
-      assert formatted =~ "dbg_mate_test.exs"
+      assert formatted =~ "backport_test.exs"
 
       assert formatted =~ """
              Case argument:
@@ -244,7 +244,7 @@ defmodule DbgMateTest do
 
       assert result == 10
 
-      assert formatted =~ "dbg_mate_test.exs"
+      assert formatted =~ "backport_test.exs"
 
       assert formatted =~ """
              Cond clause (clause #2 matched):
@@ -276,7 +276,7 @@ defmodule DbgMateTest do
 
       assert result == 10
 
-      assert formatted =~ "dbg_mate_test.exs"
+      assert formatted =~ "backport_test.exs"
 
       assert formatted =~ """
              If condition:
@@ -304,7 +304,7 @@ defmodule DbgMateTest do
 
       assert result == nil
 
-      assert formatted =~ "dbg_mate_test.exs"
+      assert formatted =~ "backport_test.exs"
 
       assert formatted =~ """
              If condition:
@@ -352,7 +352,7 @@ defmodule DbgMateTest do
 
       assert result == 10
 
-      assert formatted =~ "dbg_mate_test.exs"
+      assert formatted =~ "backport_test.exs"
 
       assert formatted =~ """
              Unless condition:
@@ -382,7 +382,7 @@ defmodule DbgMateTest do
 
       assert result == {:ok, 300}
 
-      assert formatted =~ "dbg_mate_test.exs"
+      assert formatted =~ "backport_test.exs"
 
       assert formatted =~ """
              With clauses:
@@ -413,7 +413,7 @@ defmodule DbgMateTest do
 
       assert result == :error
 
-      assert formatted =~ "dbg_mate_test.exs"
+      assert formatted =~ "backport_test.exs"
 
       assert formatted =~ """
              With clauses:
@@ -443,7 +443,7 @@ defmodule DbgMateTest do
 
       assert result == 0
 
-      assert formatted =~ "dbg_mate_test.exs"
+      assert formatted =~ "backport_test.exs"
 
       assert formatted =~ """
              With clauses:
