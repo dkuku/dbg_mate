@@ -1,18 +1,3 @@
-defmodule Macro.ExternalTest do
-  defmacro external do
-    line = 18
-    file = __ENV__.file
-    ^line = __CALLER__.line
-    ^file = __CALLER__.file
-    ^line = Macro.Env.location(__CALLER__)[:line]
-    ^file = Macro.Env.location(__CALLER__)[:file]
-  end
-
-  defmacro oror(left, right) do
-    quote(do: unquote(left) || unquote(right))
-  end
-end
-
 defmodule CustomIf do
   def if(_cond, _expr) do
     "custom if result"
@@ -158,6 +143,30 @@ defmodule DbgMateTest do
              true1 #=> true
              true1 and true2 #=> true
              (true1 and true2) or (List.first([]) || true1) #=> true
+             """
+    end
+
+    test "with block of code" do
+      {result, formatted} =
+        dbg_format(
+          (
+            a = 1
+            b = a + 2
+            a + b
+          )
+        )
+
+      assert result == 4
+
+      assert formatted =~ "dbg_mate_test.exs"
+
+      assert formatted =~ """
+             Code block:
+             (
+               a = 1 #=> 1
+               b = a + 2 #=> 3
+               a + b #=> 4
+             )
              """
     end
 
@@ -355,6 +364,99 @@ defmodule DbgMateTest do
              else
                map[:b]
              end #=> 10
+             """
+    end
+
+    test "with with/1 (all clauses match)" do
+      opts = %{width: 10, height: 15}
+
+      {result, formatted} =
+        dbg_format(
+          with {:ok, width} <- Map.fetch(opts, :width),
+               double_width = width * 2,
+               IO.puts("just a side effect"),
+               {:ok, height} <- Map.fetch(opts, :height) do
+            {:ok, double_width * height}
+          end
+        )
+
+      assert result == {:ok, 300}
+
+      assert formatted =~ "dbg_mate_test.exs"
+
+      assert formatted =~ """
+             With clauses:
+             Map.fetch(opts, :width) #=> {:ok, 10}
+             width * 2 #=> 20
+             Map.fetch(opts, :height) #=> {:ok, 15}
+
+             With expression:
+             with {:ok, width} <- Map.fetch(opts, :width),
+                  double_width = width * 2,
+                  IO.puts("just a side effect"),
+                  {:ok, height} <- Map.fetch(opts, :height) do
+               {:ok, double_width * height}
+             end #=> {:ok, 300}
+             """
+    end
+
+    test "with with/1 (no else)" do
+      opts = %{width: 10}
+
+      {result, formatted} =
+        dbg_format(
+          with {:ok, width} <- Map.fetch(opts, :width),
+               {:ok, height} <- Map.fetch(opts, :height) do
+            {:ok, width * height}
+          end
+        )
+
+      assert result == :error
+
+      assert formatted =~ "dbg_mate_test.exs"
+
+      assert formatted =~ """
+             With clauses:
+             Map.fetch(opts, :width) #=> {:ok, 10}
+             Map.fetch(opts, :height) #=> :error
+
+             With expression:
+             with {:ok, width} <- Map.fetch(opts, :width),
+                  {:ok, height} <- Map.fetch(opts, :height) do
+               {:ok, width * height}
+             end #=> :error
+             """
+    end
+
+    test "with with/1 (else clause)" do
+      opts = %{width: 10}
+
+      {result, formatted} =
+        dbg_format(
+          with {:ok, width} <- Map.fetch(opts, :width),
+               {:ok, height} <- Map.fetch(opts, :height) do
+            width * height
+          else
+            :error -> 0
+          end
+        )
+
+      assert result == 0
+
+      assert formatted =~ "dbg_mate_test.exs"
+
+      assert formatted =~ """
+             With clauses:
+             Map.fetch(opts, :width) #=> {:ok, 10}
+             Map.fetch(opts, :height) #=> :error
+
+             With expression:
+             with {:ok, width} <- Map.fetch(opts, :width),
+                  {:ok, height} <- Map.fetch(opts, :height) do
+               width * height
+             else
+               :error -> 0
+             end #=> 0
              """
     end
 

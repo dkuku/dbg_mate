@@ -117,6 +117,17 @@ defmodule DbgMate do
     end
   end
 
+  defp dbg_ast_to_debuggable({:__block__, _meta, exprs} = ast, _env) when exprs != [] do
+    acc_var = Macro.unique_var(:acc, __MODULE__)
+    result_var = Macro.unique_var(:result, __MODULE__)
+
+    quote do
+      unquote(acc_var) = []
+      unquote(dbg_block(ast, acc_var, result_var))
+      {:block, Enum.reverse(unquote(acc_var)), unquote(result_var)}
+    end
+  end
+
   defp dbg_ast_to_debuggable({:case, _meta, [expr, [do: clauses]]} = ast, _env) do
     clauses_returning_index =
       Enum.with_index(clauses, fn {:->, meta, [left, right]}, index ->
@@ -132,6 +143,45 @@ defmodule DbgMate do
         end
 
       {:case, unquote(Macro.escape(ast)), expr, clause_index, result}
+    end
+  end
+
+  defp dbg_ast_to_debuggable({:with, meta, args} = ast, _env) do
+    {opts, clauses} = List.pop_at(args, -1)
+
+    acc_ref_var = Macro.unique_var(:acc_ref, __MODULE__)
+
+    modified_clauses =
+      Enum.flat_map(clauses, fn
+        # We only detail assignments and pattern-matching clauses that
+        # can be helpful to understand how the result is constructed.
+        {symbol, _meta, [left, right]} when symbol in [:<-, :=] ->
+          quote do
+            [
+              value = unquote(right),
+              Process.put(unquote(acc_ref_var), [
+                {unquote(Macro.escape(right)), value} | Process.get(unquote(acc_ref_var))
+              ]),
+              unquote(symbol)(unquote(left), value)
+            ]
+          end
+
+        # Other expressions like side effects are omitted.
+        expr ->
+          [expr]
+      end)
+
+    modified_with_ast = {:with, meta, modified_clauses ++ [opts]}
+
+    quote do
+      unquote(acc_ref_var) = make_ref()
+      Process.put(unquote(acc_ref_var), [])
+
+      value = unquote(modified_with_ast)
+
+      acc = Process.get(unquote(acc_ref_var))
+      Process.delete(unquote(acc_ref_var))
+      {:with, unquote(Macro.escape(ast)), Enum.reverse(acc), value}
     end
   end
 
@@ -207,6 +257,21 @@ defmodule DbgMate do
     end
   end
 
+  defp dbg_block({:__block__, meta, exprs}, acc_var, result_var) do
+    modified_exprs =
+      Enum.map(exprs, fn expr ->
+        quote do
+          unquote(result_var) = unquote(expr)
+
+          unquote(acc_var) = [
+            {unquote(Macro.escape(expr)), unquote(result_var)} | unquote(acc_var)
+          ]
+        end
+      end)
+
+    {:__block__, meta, modified_exprs}
+  end
+
   # Made public to be called from Macro.dbg/3, so that we generate as little code
   # as possible and call out into a function as soon as we can.
   @doc false
@@ -253,6 +318,20 @@ defmodule DbgMate do
       end)
 
     {formatted, final_value}
+  end
+
+  defp dbg_format_ast_to_debug({:block, components, value}, options) do
+    formatted =
+      [
+        dbg_maybe_underline("Code block", options),
+        ":\n(\n",
+        Enum.map(components, fn {ast, value} ->
+          ["  ", dbg_format_ast_with_value(ast, value, options)]
+        end),
+        ")\n"
+      ]
+
+    {formatted, value}
   end
 
   defp dbg_format_ast_to_debug({:case, ast, expr_value, clause_index, value}, options) do
@@ -306,6 +385,25 @@ defmodule DbgMate do
     ]
 
     {formatted, result}
+  end
+
+  defp dbg_format_ast_to_debug({:with, ast, clauses, value}, options) do
+    formatted_clauses =
+      Enum.map(clauses, fn {clause_ast, clause_value} ->
+        dbg_format_ast_with_value(clause_ast, clause_value, options)
+      end)
+
+    formatted = [
+      dbg_maybe_underline("With clauses", options),
+      ":\n",
+      formatted_clauses,
+      ?\n,
+      dbg_maybe_underline("With expression", options),
+      ":\n",
+      dbg_format_ast_with_value(ast, value, options)
+    ]
+
+    {formatted, value}
   end
 
   defp dbg_format_ast_to_debug({:value, code_ast, value}, options) do
