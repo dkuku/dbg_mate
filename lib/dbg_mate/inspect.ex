@@ -26,11 +26,11 @@ defmodule DbgMate.Inspect do
   end
 
   def dbg_tc([do: {op, meta, clauses}], options, env) do
-    [do: dbg({op, meta, clauses}, options, env)]
+    [do: dbg_tc({op, meta, clauses}, options, env)]
   end
 
   def dbg_tc({op, meta, clauses}, options, env) when op in [:__block__, :def, :defmodule] do
-    clauses = Enum.map(clauses, &dbg(&1, options, env))
+    clauses = Enum.map(clauses, &dbg_tc(&1, options, env))
     {op, meta, clauses}
   end
 
