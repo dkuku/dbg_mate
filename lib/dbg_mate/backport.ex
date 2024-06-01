@@ -1,6 +1,6 @@
 defmodule DbgMate.Backport do
   @moduledoc """
-  This module includes features that will be enabled in elixir 1.18.
+  This module includes features that will be enabled in elixir 1.18,
   plus a commit for `with` that was not merged.
 
   Backport module currently includes dbg implementation for:
