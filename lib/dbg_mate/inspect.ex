@@ -1,11 +1,9 @@
 defmodule DbgMate.Inspect do
   @moduledoc """
   dbg functtions that use IO.inspect() do display results
+  """
 
-
-
-
-  @doc \"""
+  @doc """
   Wraps your code in IO.inspect calls used for showing the intermediate results.
   The difference between the upstream dbg function is that it displays as the code
   is executed and is not waiting until a block of code finishes.
@@ -18,10 +16,10 @@ defmodule DbgMate.Inspect do
   |> dbg
 
   defmodule Y do
-  def x do
-    :z
-  end
-  |> dbg
+    def x do
+      :z
+    end
+    |> dbg
   end
   ```
   """
