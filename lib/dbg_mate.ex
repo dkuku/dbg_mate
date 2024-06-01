@@ -19,5 +19,16 @@ defmodule DbgMate do
   ```
   Application.put_env(:elixir, :dbg_callback, {DbgMate,Backport, :dbg, []})
   ```
+
+  or in livebook
+
+  ```
+  Mix.install(
+  [
+    {:dbg_mate, "~> 0.1.0"}
+  ],
+  config: [elixir: [dbg_callback: {DbgMate.Inspect, :dbg_tc, []}]]
+  )
+  ```
   """
 end

@@ -20,6 +20,17 @@ To use it just set the config value in config or run this before your dbg call
 Application.put_env(:elixir, :dbg_callback, {DbgMate,Backport, :dbg, []})
 ```
 
+or in livebook
+
+```elixir
+Mix.install(
+    [
+    {:dbg_mate, "~> 0.1.0"}
+    ],
+    config: [elixir: [dbg_callback: {DbgMate.Inspect, :dbg_tc, []}]]
+)
+```
+
 ## Installation
 
 If [available in Hex](https://hex.pm/docs/publish), the package can be installed

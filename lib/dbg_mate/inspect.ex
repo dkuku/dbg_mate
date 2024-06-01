@@ -12,7 +12,7 @@ defmodule DbgMate.Inspect do
 
   def dbg({op, meta, _data} = ast, _options, _env) when op in @valid_ops do
     label = ast |> Macro.to_string() |> String.replace(~r/\s\s+/, " ")
-    label = "#{meta[:line]} " <> label
+    label = "#{meta[:line]} | " <> label
 
     quote do
       result = unquote(ast)
@@ -34,15 +34,16 @@ defmodule DbgMate.Inspect do
     {op, meta, clauses}
   end
 
-  def dbg_tc({op, _meta, _data} = ast, _options, _env) when op in @valid_ops do
+  def dbg_tc({op, meta, _data} = ast, _options, _env) when op in @valid_ops do
     label = ast |> Macro.to_string() |> String.replace(~r/\s\s+/, " ")
+    line = String.pad_leading("#{meta[:line]} |", 5)
 
     quote do
       start_time = System.monotonic_time()
       result = unquote(ast)
       duration = DbgMate.Inspect.get_duration_string(start_time)
 
-      IO.inspect(result, label: duration <> " " <> unquote(label))
+      IO.inspect(result, label: unquote(line) <> duration <> " " <> unquote(label))
     end
   end
 
