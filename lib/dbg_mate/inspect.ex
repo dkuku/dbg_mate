@@ -73,7 +73,8 @@ defmodule DbgMate.Inspect do
     quote do
       start_time = System.monotonic_time()
       result = unquote(ast)
-      duration = DbgMate.Inspect.get_duration_string(start_time)
+      end_time = System.monotonic_time()
+      duration = DbgMate.Formatter.get_duration_string(start_time, end_time)
 
       IO.inspect(result, label: unquote(line) <> duration <> " " <> unquote(label))
     end
@@ -81,17 +82,5 @@ defmodule DbgMate.Inspect do
 
   def dbg_tc(ast, _, _) do
     ast
-  end
-
-  def get_duration_string(start_time) do
-    end_time = System.monotonic_time()
-    duration = end_time - start_time
-
-    case System.convert_time_unit(duration, :native, :microsecond) do
-      duration when duration < 1000 -> "#{duration}us"
-      duration when duration < 1_000_000 -> "#{div(duration, 1000)}ms"
-      duration when duration < 1_000_000_000 -> "#{div(duration, 1_000_000)}s "
-    end
-    |> String.pad_leading(6)
   end
 end
