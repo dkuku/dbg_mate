@@ -46,7 +46,7 @@ defmodule DbgMate.Inspect do
     end
   end
 
-  def dbg({_op, _, _} = ast, _, _) do
+  def dbg(ast, _, _) do
     ast
   end
 
@@ -79,7 +79,7 @@ defmodule DbgMate.Inspect do
     end
   end
 
-  def dbg_tc({_op, _, _} = ast, _, _) do
+  def dbg_tc(ast, _, _) do
     ast
   end
 

@@ -5,6 +5,17 @@ defmodule DbgMate do
   ### DbgMate.Backport.dbg
   Backport module currently includes dbg implementation for:
 
+  - pipes
+  - binary operators: and, or, ||, &&
+  - code blocks wrapped in brackets
+  - conditions: case, cond, if, unless, with
+
+  To use it just set the config value in config or run this before your dbg call
+
+  ```
+  config :elixir, :dbg_callback, {DbgMate,Backport, :dbg, []})
+  ```
+
   ### DbgMate.Inspect.dbg
   Wraps your code in IO.inspect calls used for showing the intermediate results.
   The difference between the upstream dbg function is that it displays as the code
@@ -17,7 +28,7 @@ defmodule DbgMate do
   To use it just set the config value in config or run this before your dbg call
 
   ```
-  Application.put_env(:elixir, :dbg_callback, {DbgMate,Backport, :dbg, []})
+  config :elixir, :dbg_callback, {DbgMate,Backport, :dbg, []})
   ```
 
   or in livebook
