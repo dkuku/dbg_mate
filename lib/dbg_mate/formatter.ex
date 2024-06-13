@@ -45,7 +45,7 @@ defmodule DbgMate.Formatter do
   defp output(:result, _, _, _, _, result), do: inspect(result)
   defp output(other, _, _, _, _, _), do: other
 
-  def get_duration_string(start_time, end_time) do
+  defp get_duration_string(start_time, end_time) do
     duration = end_time - start_time
 
     case System.convert_time_unit(duration, :native, :microsecond) do

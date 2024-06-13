@@ -5,12 +5,14 @@ defmodule DbgMate.Custom do
 
   @doc """
   You can pass custom function and a formatter string.
+  Supported options are documented in the Formatter module.
+  Callback is one arity function that receives the generated io list as a param.
 
   ```elixir
   defmodule X do
     def y do: :z
   end
-  |> dbg
+  |> dbg(formatter: "$line: $result", callback: &IO.puts/1)
 
   defmodule Y do
     def x do
@@ -34,6 +36,7 @@ defmodule DbgMate.Custom do
 
   def dbg({op, meta, _data} = ast, options, _env) when op in @valid_ops do
     compiled_format = DbgMate.Formatter.compile(options[:format])
+    callback = options[:callback] || (&IO.write/1)
     label = ast |> Macro.to_string() |> String.replace(~r/\s\s+/, " ")
 
     quote do
@@ -41,7 +44,7 @@ defmodule DbgMate.Custom do
       result = unquote(ast)
       end_time = System.monotonic_time()
 
-      IO.write(
+      unquote(callback).(
         DbgMate.Formatter.format(
           unquote(compiled_format),
           unquote(meta),

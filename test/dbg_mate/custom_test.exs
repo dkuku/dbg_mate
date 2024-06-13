@@ -21,7 +21,7 @@ defmodule DbgMate.CustomTest do
             b = 2 + 1
             a + b
           ),
-          formatter: fn x -> x end,
+          callback: &IO.write/1,
           format: "$line | $code: $result\n"
         )
 
@@ -98,6 +98,35 @@ defmodule DbgMate.CustomTest do
                ExUnit.CaptureIO.with_io(fn ->
                  XXX.fun(1, 2)
                end)
+    end
+
+    test "with custom callback" do
+      Application.put_env(:elixir, :dbg_callback, {DbgMate.Custom, :dbg, []})
+      Application.put_env(:dbg_mate, :format, "$line | $code: $result\n")
+
+      defmodule WithLogger do
+        def function(_x) do
+          a = 1
+          b = 3
+          _c = a + b
+        end
+        |> dbg(format: "$line | $code: $result\n", callback: fn log -> send(self(), log) end)
+      end
+
+      WithLogger.function(1)
+
+      messages =
+        Enum.map(1..3, fn _ ->
+          receive do
+            message -> message
+          end
+        end)
+
+      assert messages == [
+               ["109", " | ", "a = 1", ": ", "1", "\n"],
+               ["110", " | ", "b = 3", ": ", "3", "\n"],
+               ["111", " | ", "_c = a + b", ": ", "4", "\n"]
+             ]
     end
   end
 end
