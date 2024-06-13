@@ -2,7 +2,7 @@ defmodule DbgMate.InspectTest do
   use ExUnit.Case, async: true
 
   describe "dbg" do
-    defmacrop dbg_format(ast, options \\ quote(do: [syntax_colors: []])) do
+    defmacrop dbg_format(ast, options) do
       quote do
         {result, formatted} =
           ExUnit.CaptureIO.with_io(fn ->
@@ -27,8 +27,8 @@ defmodule DbgMate.InspectTest do
       assert result == 4
 
       assert formatted == """
-             20 a = 1: 1
-             21 b = 2 + 1: 3
+             20 | a = 1: 1
+             21 | b = 2 + 1: 3
              """
     end
 
@@ -81,18 +81,18 @@ defmodule DbgMate.InspectTest do
       assert result == 106
 
       assert formatted == """
-             40 a = 1: 1
-             41 b = 3: 3
-             42 d = a + b: 4
-             44 c = if a == 2 do 2 else b end: 3
-             70 c = a + b: 4
-             51 j = fun(a, b): 4
-             53 i = with e <- 1 + c, f = b * e do f + e + j end: 20
-             59 z = for g <- a..d, h <- b..c do g + h + i end: [24, 25, 26, 27]
-             66 z |> Enum.map(&(&1 + 1)) |> Enum.sum(): 106
+             40 | a = 1: 1
+             41 | b = 3: 3
+             42 | d = a + b: 4
+             44 | c = if a == 2 do 2 else b end: 3
+             70 | c = a + b: 4
+             51 | j = fun(a, b): 4
+             53 | i = with e <- 1 + c, f = b * e do f + e + j end: 20
+             59 | z = for g <- a..d, h <- b..c do g + h + i end: [24, 25, 26, 27]
+             66 | z |> Enum.map(&(&1 + 1)) |> Enum.sum(): 106
              """
 
-      assert {3, "70 c = a + b: 3\n"} ==
+      assert {3, "70 | c = a + b: 3\n"} ==
                ExUnit.CaptureIO.with_io(fn ->
                  XXX.fun(1, 2)
                end)
