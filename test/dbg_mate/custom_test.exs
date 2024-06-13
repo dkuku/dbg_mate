@@ -83,18 +83,18 @@ defmodule DbgMate.CustomTest do
       assert result == 106
 
       assert formatted == """
-             42 | a = 1: 1
-             43 | b = 3: 3
-             44 | d = a + b: 4
-             46 | c = if a == 2 do 2 else b end: 3
-             72 | c = a + b: 4
-             53 | j = fun(a, b): 4
-             55 | i = with e <- 1 + c, f = b * e do f + e + j end: 20
-             61 | z = for g <- a..d, h <- b..c do g + h + i end: [24, 25, 26, 27]
-             68 | z |> Enum.map(&(&1 + 1)) |> Enum.sum(): 106
+              42 | a = 1: 1
+              43 | b = 3: 3
+              44 | d = a + b: 4
+              46 | c = if a == 2 do 2 else b end: 3
+              72 | c = a + b: 4
+              53 | j = fun(a, b): 4
+              55 | i = with e <- 1 + c, f = b * e do f + e + j end: 20
+              61 | z = for g <- a..d, h <- b..c do g + h + i end: [24, 25, 26, 27]
+              68 | z |> Enum.map(&(&1 + 1)) |> Enum.sum(): 106
              """
 
-      assert {3, "72 | c = a + b: 3\n"} ==
+      assert {3, " 72 | c = a + b: 3\n"} ==
                ExUnit.CaptureIO.with_io(fn ->
                  XXX.fun(1, 2)
                end)

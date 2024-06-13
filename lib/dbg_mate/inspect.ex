@@ -24,30 +24,9 @@ defmodule DbgMate.Inspect do
   ```
   """
 
-  @valid_ops [:def, :defp, :if, :unless, :case, :cond, :with, :=, :for, :|>]
-
-  def dbg([do: {op, meta, clauses}], options, env) do
-    [do: dbg({op, meta, clauses}, options, env)]
-  end
-
-  def dbg({op, meta, clauses}, options, env) when op in [:__block__, :def, :defmodule] do
-    clauses = Enum.map(clauses, &dbg(&1, options, env))
-    {op, meta, clauses}
-  end
-
-  def dbg({op, meta, _data} = ast, _options, _env) when op in @valid_ops do
-    label = ast |> Macro.to_string() |> String.replace(~r/\s\s+/, " ")
-    label = "#{meta[:line]} | " <> label
-
-    quote do
-      result = unquote(ast)
-
-      IO.inspect(result, label: unquote(label))
-    end
-  end
-
-  def dbg(ast, _, _) do
-    ast
+  def dbg(operation, options, env) do
+    options = Keyword.put(options, :format, "$line | $code: $result\n")
+    DbgMate.Custom.dbg(operation, options, env)
   end
 
   @doc """
@@ -57,30 +36,8 @@ defmodule DbgMate.Inspect do
 
   To use it just set the config value in config or run this before your dbg call
   """
-  def dbg_tc([do: {op, meta, clauses}], options, env) do
-    [do: dbg_tc({op, meta, clauses}, options, env)]
-  end
-
-  def dbg_tc({op, meta, clauses}, options, env) when op in [:__block__, :def, :defmodule] do
-    clauses = Enum.map(clauses, &dbg_tc(&1, options, env))
-    {op, meta, clauses}
-  end
-
-  def dbg_tc({op, meta, _data} = ast, _options, _env) when op in @valid_ops do
-    label = ast |> Macro.to_string() |> String.replace(~r/\s\s+/, " ")
-    line = String.pad_leading("#{meta[:line]} |", 5)
-
-    quote do
-      start_time = System.monotonic_time()
-      result = unquote(ast)
-      end_time = System.monotonic_time()
-      duration = DbgMate.Formatter.get_duration_string(start_time, end_time)
-
-      IO.inspect(result, label: unquote(line) <> duration <> " " <> unquote(label))
-    end
-  end
-
-  def dbg_tc(ast, _, _) do
-    ast
+  def dbg_tc(operation, options, env) do
+    options = Keyword.put(options, :format, "$line | $duration | $code: $result\n")
+    DbgMate.Custom.dbg(operation, options, env)
   end
 end
