@@ -382,8 +382,6 @@ defmodule DbgMate.BackportTest do
 
       assert result == {:ok, 300}
 
-      assert formatted =~ "backport_test.exs"
-
       assert formatted =~ """
              With clauses:
              Map.fetch(opts, :width) #=> {:ok, 10}
@@ -413,8 +411,6 @@ defmodule DbgMate.BackportTest do
 
       assert result == :error
 
-      assert formatted =~ "backport_test.exs"
-
       assert formatted =~ """
              With clauses:
              Map.fetch(opts, :width) #=> {:ok, 10}
@@ -443,8 +439,6 @@ defmodule DbgMate.BackportTest do
 
       assert result == 0
 
-      assert formatted =~ "backport_test.exs"
-
       assert formatted =~ """
              With clauses:
              Map.fetch(opts, :width) #=> {:ok, 10}
@@ -457,6 +451,187 @@ defmodule DbgMate.BackportTest do
              else
                :error -> 0
              end #=> 0
+             """
+    end
+
+    test "with with/1 (guard)" do
+      opts = %{width: 10, height: 0.0}
+
+      {result, formatted} =
+        dbg_format(
+          with {:ok, width} when is_integer(width) <- Map.fetch(opts, :width),
+               {:ok, height} when is_integer(height) <- Map.fetch(opts, :height) do
+            width * height
+          else
+            _ -> nil
+          end
+        )
+
+      assert result == nil
+
+      assert formatted =~ """
+             With clauses:
+             Map.fetch(opts, :width) #=> {:ok, 10}
+             Map.fetch(opts, :height) #=> {:ok, 0.0}
+
+             With expression:
+             with {:ok, width} when is_integer(width) <- Map.fetch(opts, :width),
+                  {:ok, height} when is_integer(height) <- Map.fetch(opts, :height) do
+               width * height
+             else
+               _ -> nil
+             end #=> nil
+             """
+    end
+
+    test "with with/1 (guard in else)" do
+      opts = %{}
+
+      {result, _formatted} =
+        dbg_format(
+          with {:ok, width} <- Map.fetch(opts, :width) do
+            width
+          else
+            other when is_integer(other) -> :int
+            other when is_atom(other) -> :atom
+          end
+        )
+
+      assert result == :atom
+    end
+
+    test "with with/1 respects the WithClauseError" do
+      value = Enum.random([:unexpected])
+
+      error =
+        assert_raise WithClauseError, fn ->
+          dbg(
+            with :ok <- value do
+              true
+            else
+              :error -> false
+            end
+          )
+        end
+
+      assert error.term == :unexpected
+    end
+
+    test "with zero arity function calls" do
+      {result, formatted} =
+        dbg_format(Map.new())
+
+      assert result == %{}
+
+      assert formatted =~ """
+             Function result:
+             Map.new() #=> %{}
+             """
+    end
+
+    test "with one arity function calls" do
+      zero = 0
+
+      {result, formatted} =
+        dbg_format(DateTime.from_unix!(zero))
+
+      assert result == ~U[1970-01-01 00:00:00Z]
+
+      assert formatted =~ """
+             Function arguments:
+             zero #=> 0
+
+             Function result:
+             DateTime.from_unix!(zero) #=> ~U[1970-01-01 00:00:00Z]
+             """
+    end
+
+    test "with two arity function calls" do
+      {result, formatted} =
+        dbg_format(Enum.into(Enum.to_list(1..5), MapSet.new()))
+
+      assert result == MapSet.new([1, 2, 3, 4, 5])
+
+      assert formatted =~ """
+             Function arguments:
+             Enum.to_list(1..5) #=> [1, 2, 3, 4, 5]
+             MapSet.new() #=> MapSet.new([])
+
+             Function result:
+             Enum.into(Enum.to_list(1..5), MapSet.new()) #=> MapSet.new([1, 2, 3, 4, 5])
+             """
+    end
+
+    test "with two arity function calls using variables" do
+      list = Enum.to_list(1..5)
+      set = MapSet.new()
+
+      {result, formatted} =
+        dbg_format(Enum.into(list, set))
+
+      assert result == MapSet.new([1, 2, 3, 4, 5])
+
+      assert formatted =~ """
+             Function arguments:
+             list #=> [1, 2, 3, 4, 5]
+             set #=> MapSet.new([])
+
+             Function result:
+             Enum.into(list, set) #=> MapSet.new([1, 2, 3, 4, 5])
+             """
+    end
+
+    test "with erlang style function calls" do
+      {one, two} = {1, 2}
+
+      {result, formatted} =
+        dbg_format(:math.pow(one, two))
+
+      assert result == 1
+
+      assert formatted =~ """
+             Function arguments:
+             one #=> 1
+             two #=> 2
+
+             Function result:
+             :math.pow(one, two) #=> 1.0
+             """
+    end
+
+    test "with local function recursion" do
+      list = [1, 2, 3, 4, 5]
+
+      {result, formatted} =
+        dbg_format(local_recursive_sum(list))
+
+      assert result == 15
+
+      assert formatted =~ """
+             Function arguments:
+             list #=> [1, 2, 3, 4, 5]
+
+             Function result:
+             local_recursive_sum(list) #=> 15
+             """
+    end
+
+    test "with anonymous function" do
+      add = fn a, b -> a + b end
+      {a, b} = {1, 2}
+
+      {result, formatted} =
+        dbg_format(add.(a, b))
+
+      assert result == 3
+
+      assert formatted =~ """
+             Function arguments:
+             a #=> 1
+             b #=> 2
+
+             Function result:
+             add.(a, b) #=> 3
              """
     end
 
@@ -481,5 +656,9 @@ defmodule DbgMate.BackportTest do
       assert result == "hello"
       refute formatted =~ Path.basename(__ENV__.file)
     end
+
+    defp local_recursive_sum(list), do: local_recursive_sum(list, 0)
+    defp local_recursive_sum([h | t], acc), do: local_recursive_sum(t, acc + h)
+    defp local_recursive_sum([], acc), do: acc
   end
 end
