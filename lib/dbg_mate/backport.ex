@@ -62,6 +62,10 @@ defmodule DbgMate.Backport do
 
   This function raises if the context of the given `env` is `:match` or `:guard`.
   """
+  def install do
+    Application.put_env(:elixir, :dbg_callback, {DbgMate.Backport, :dbg, []})
+  end
+
   @doc since: "1.14.0"
   @spec dbg(t, t, Macro.Env.t()) :: t
   def dbg(code, options, %Macro.Env{} = env) do

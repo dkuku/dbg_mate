@@ -24,6 +24,14 @@ defmodule DbgMate.Inspect do
   ```
   """
 
+  def install do
+    Application.put_env(:elixir, :dbg_callback, {DbgMate.Inspect, :dbg, []})
+  end
+
+  def install(:dbg_tc) do
+    Application.put_env(:elixir, :dbg_callback, {DbgMate.Inspect, :dbg_tc, []})
+  end
+
   def dbg(operation, options, env) do
     options = Keyword.put(options, :format, "$line | $code: $result\n")
     DbgMate.Custom.dbg(operation, options, env)
